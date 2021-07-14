@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../models/MileageCalculator.dart';
+import '../../models/OdometerDigits.dart';
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -19,68 +12,207 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+  final _formKey = GlobalKey<FormState>();
+  final _previousReadingController = TextEditingController();
+  final _currentReadingController = TextEditingController();
+  final _fuelRefilledController = TextEditingController();
+  final _mileageCalculator = MileageCalculator();
+
+  final _supportedDigits = [
+    OdometerDigits(5, 'Five'),
+    OdometerDigits(6, 'Six'),
+    OdometerDigits(7, 'Seven'),
+    OdometerDigits(8, 'Eight'),
+    OdometerDigits(9, 'Nine'),
+  ];
+
+  OdometerDigits _selectedDigit;
+  int _calculatedDistance;
+  double _calculatedMileage;
+
+  List<DropdownMenuItem<OdometerDigits>> get _supportedItems => this._supportedDigits
+        .map<DropdownMenuItem<OdometerDigits>>((OdometerDigits digits) {
+      return DropdownMenuItem<OdometerDigits>(
+        value: digits,
+          child: Text(
+              digits.text,
+          ),
+      );
+    }).toList();
+  bool get _isDigitSelected => this._selectedDigit != null;
+  String get _calculatedText => 'Distance Travelled: ${this._calculatedDistance ?? ''}\nMileage: ${this._calculatedMileage ?? ''}';
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+
+    final mediaQuery = MediaQuery.of(context);
+    final crossAxisCount = this._crossAxisCount(mediaQuery);
+    final itemWidth = mediaQuery.size.width / crossAxisCount;
+    final itemHeight = 90;
+    final ratio = itemWidth / itemHeight;
+    final maxDigits = (this._selectedDigit != null) ? this._selectedDigit.digits : null;
+
     return Scaffold(
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
+      body: SafeArea(
+          child: Form(
+            key: this._formKey,
+            child: GridView.count(
+              crossAxisCount: crossAxisCount,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              crossAxisSpacing: 16,
+              childAspectRatio: ratio,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              children: [
+                Container(
+                  alignment: Alignment.bottomLeft,
+                  child: DropdownButton(
+                    isExpanded: true,
+                    hint: Text(
+                        'Number of digits in the Odometer'
+                    ),
+                    items: this._supportedItems,
+                    onChanged: this._onChangeDigitSelection,
+                    value: this._selectedDigit,
+                  ),
+                ),
+                Container(
+                  alignment: Alignment.topLeft,
+                  child: TextFormField(
+                    controller: this._previousReadingController,
+                    decoration: InputDecoration(
+                      labelText: 'Previous Reading',
+                    ),
+                    enabled: this._isDigitSelected,
+                    keyboardType: TextInputType.number,
+                    maxLength: maxDigits,
+                    validator: this._readingTextValidation,
+                  ),
+                ),
+                Container(
+                  alignment: Alignment.topLeft,
+                  child: TextFormField(
+                    controller: this._currentReadingController,
+                    decoration: InputDecoration(
+                      labelText: 'Current Reading',
+                    ),
+                    enabled: this._isDigitSelected,
+                    keyboardType: TextInputType.number,
+                    maxLength: maxDigits,
+                    validator: this._readingTextValidation,
+                  ),
+                ),
+                Container(
+                  alignment: Alignment.topLeft,
+                  child: TextFormField(
+                    controller: this._fuelRefilledController,
+                    decoration: InputDecoration(
+                      labelText: 'Fuel Refilled',
+                    ),
+                    enabled: this._isDigitSelected,
+                    keyboardType: TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    maxLength: maxDigits,
+                    validator: this._refillTextValidation,
+                  ),
+                ),
+                Container(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    this._calculatedText,
+                  ),
+                ),
+                Container(
+                  alignment: Alignment.topRight,
+                  child: ElevatedButton(
+                    child: Text(
+                      'Calculate',
+                    ),
+                    onPressed: this._isDigitSelected ? this._onTapCalculate : null,
+                  ),
+                )
+              ],
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
+          ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
+        onPressed: this._onTapClearAll,
+        tooltip: 'Clear All',
+        child: Icon(Icons.clear_all_rounded),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+
+  int _crossAxisCount(MediaQueryData mediaQuery) {
+    final size = mediaQuery.size;
+    final orientation = mediaQuery.orientation;
+    final widthCutOff = 600;
+
+    if (orientation == Orientation.portrait) {
+      return (size.shortestSide >= widthCutOff) ? 2 : 1;
+    } else {
+      return (size.longestSide < widthCutOff) ? 1 : 2;
+    }
+  }
+
+  _onChangeDigitSelection(OdometerDigits digits) {
+    this.setState(() {
+      this._selectedDigit = digits;
+    });
+  }
+
+  String _readingTextValidation(String value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter the reading';
+    } else if (int.tryParse(value) == null) {
+      return 'Please enter valid reading';
+    } else {
+      return null;
+    }
+  }
+
+  String _refillTextValidation(String value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter the fuel refilled quantity';
+    }
+    final refill = double.tryParse(value);
+    if (refill == null || refill <= 0) {
+      return 'Please enter valid fuel refill quantity';
+    } else {
+      return null;
+    }
+  }
+
+  _onTapCalculate() {
+    int distance;
+    double mileage;
+    if (this._formKey.currentState.validate()) {
+      final previousReading = int.tryParse(this._previousReadingController.text);
+      final currentReading = int.tryParse(this._currentReadingController.text);
+      final refill = double.tryParse(this._fuelRefilledController.text);
+      final values = this._mileageCalculator.calculate(this._selectedDigit, previousReading, currentReading, refill);
+
+      distance = values.item1;
+      mileage = values.item2;
+    }
+
+    this.setState(() {
+      this._calculatedDistance = distance;
+      this._calculatedMileage = mileage;
+    });
+  }
+
+  _onTapClearAll() {
+    this.setState(() {
+      this._previousReadingController.text = null;
+      this._currentReadingController.text = null;
+      this._fuelRefilledController.text = null;
+    });
   }
 }
