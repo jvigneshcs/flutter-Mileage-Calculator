@@ -9,7 +9,7 @@ class MileageCalculator {
     if (refill <= 0) {
       return Tuple2(0, 0);
     }
-    final maxReading = pow(10, digits.digits) - 1;
+    final int maxReading = pow(10, digits.digits).toInt() - 1;
     int distance = 0;
     if (currentReading > previousReading) {
       distance = currentReading - previousReading;

@@ -3,7 +3,7 @@ import '../../models/MileageCalculator.dart';
 import '../../models/OdometerDigits.dart';
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+  MyHomePage({Key? key, required this.title}) : super(key: key);
 
   final String title;
 
@@ -27,9 +27,9 @@ class _MyHomePageState extends State<MyHomePage> {
     OdometerDigits(9, 'Nine'),
   ];
 
-  OdometerDigits _selectedDigit;
-  int _calculatedDistance;
-  double _calculatedMileage;
+  OdometerDigits? _selectedDigit;
+  int? _calculatedDistance;
+  double? _calculatedMileage;
 
   List<DropdownMenuItem<OdometerDigits>> get _supportedItems => this._supportedDigits
         .map<DropdownMenuItem<OdometerDigits>>((OdometerDigits digits) {
@@ -47,11 +47,12 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
 
     final mediaQuery = MediaQuery.of(context);
+    final textTheme = Theme.of(context).textTheme;
     final crossAxisCount = this._crossAxisCount(mediaQuery);
     final itemWidth = mediaQuery.size.width / crossAxisCount;
     final itemHeight = 90;
     final ratio = itemWidth / itemHeight;
-    final maxDigits = (this._selectedDigit != null) ? this._selectedDigit.digits : null;
+    final maxDigits = this._selectedDigit?.digits;
 
     return Scaffold(
       appBar: AppBar(
@@ -118,7 +119,6 @@ class _MyHomePageState extends State<MyHomePage> {
                     keyboardType: TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    maxLength: maxDigits,
                     validator: this._refillTextValidation,
                   ),
                 ),
@@ -126,6 +126,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   alignment: Alignment.topLeft,
                   child: Text(
                     this._calculatedText,
+                    style: textTheme.headline6,
                   ),
                 ),
                 Container(
@@ -161,13 +162,13 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  _onChangeDigitSelection(OdometerDigits digits) {
+  _onChangeDigitSelection(OdometerDigits? digits) {
     this.setState(() {
       this._selectedDigit = digits;
     });
   }
 
-  String _readingTextValidation(String value) {
+  String? _readingTextValidation(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter the reading';
     } else if (int.tryParse(value) == null) {
@@ -177,7 +178,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  String _refillTextValidation(String value) {
+  String? _refillTextValidation(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter the fuel refilled quantity';
     }
@@ -190,13 +191,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   _onTapCalculate() {
-    int distance;
-    double mileage;
-    if (this._formKey.currentState.validate()) {
+    int? distance;
+    double? mileage;
+    if (this._formKey.currentState!.validate()) {
       final previousReading = int.tryParse(this._previousReadingController.text);
       final currentReading = int.tryParse(this._currentReadingController.text);
       final refill = double.tryParse(this._fuelRefilledController.text);
-      final values = this._mileageCalculator.calculate(this._selectedDigit, previousReading, currentReading, refill);
+      final values = this._mileageCalculator.calculate(this._selectedDigit!, previousReading!, currentReading!, refill!);
 
       distance = values.item1;
       mileage = values.item2;
@@ -210,9 +211,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   _onTapClearAll() {
     this.setState(() {
-      this._previousReadingController.text = null;
-      this._currentReadingController.text = null;
-      this._fuelRefilledController.text = null;
+      this._previousReadingController.clear();
+      this._currentReadingController.clear();
+      this._fuelRefilledController.clear();
     });
   }
 }
