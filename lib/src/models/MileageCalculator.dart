@@ -3,11 +3,16 @@ import 'dart:math';
 import 'OdometerDigits.dart';
 import 'package:tuple/tuple.dart';
 
+typedef DistanceAndMileage = Tuple2<int, double>;
+
 class MileageCalculator {
 
-  Tuple2<int, double> calculate(OdometerDigits digits, int previousReading, int currentReading, double refill) {
+  DistanceAndMileage calculate(OdometerDigits digits,
+      int previousReading,
+      int currentReading,
+      double refill) {
     if (refill <= 0) {
-      return Tuple2(0, 0);
+      return DistanceAndMileage(0, 0);
     }
     final int maxReading = pow(10, digits.digits).toInt() - 1;
     int distance = 0;
@@ -17,6 +22,6 @@ class MileageCalculator {
       distance = (maxReading - previousReading) + currentReading;
     }
 
-    return Tuple2(distance, distance / refill);
+    return DistanceAndMileage(distance, distance / refill);
   }
 }

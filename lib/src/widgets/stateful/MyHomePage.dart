@@ -75,7 +75,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: DropdownButton(
                     isExpanded: true,
                     hint: Text(
-                        'Number of digits in the Odometer'
+                        'Select number of digits in Odometer'
                     ),
                     items: this._supportedItems,
                     onChanged: this._onChangeDigitSelection,
