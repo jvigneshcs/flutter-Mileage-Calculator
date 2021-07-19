@@ -17,9 +17,9 @@ class _MyHomePageState extends State<MyHomePage> {
   final _previousReadingController = TextEditingController();
   final _currentReadingController = TextEditingController();
   final _fuelRefilledController = TextEditingController();
-  final _mileageCalculator = MileageCalculator();
+  late final MileageCalculator _mileageCalculator = MileageCalculator();
 
-  final _supportedDigits = [
+  final _supportedDigits = const [
     OdometerDigits(5, 'Five'),
     OdometerDigits(6, 'Six'),
     OdometerDigits(7, 'Seven'),
@@ -41,7 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     }).toList();
   bool get _isDigitSelected => this._selectedDigit != null;
-  String get _calculatedText => 'Distance Travelled: ${this._calculatedDistance ?? ''}\nMileage: ${this._calculatedMileage ?? ''}';
+  String get _calculatedText => 'Distance Travelled: ${this._calculatedDistance ?? ''}\nMileage: ${this._calculatedMileage?.toStringAsFixed(2) ?? ''}';
 
   @override
   Widget build(BuildContext context) {
