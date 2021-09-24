@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'widgets/stateless/MyApp.dart';
+import 'src/widgets/stateless/MyApp.dart';
 
 void main() {
   runApp(MyApp());
